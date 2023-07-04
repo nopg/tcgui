@@ -16,6 +16,8 @@ import (
 	"github.com/danielgtaylor/huma/responses"
 )
 
+var Version string = "0.0.1"
+
 type FormData struct {
 	Body io.Reader
 }
@@ -115,7 +117,7 @@ func main() {
 	load_defaults()
 
 	// Create new Huma router & CLI with defaults
-	app := cli.NewRouter("RPi WAN Emulation", "1.0.0")
+	app := cli.NewRouter("RPi WAN Emulation", Version)
 
 	// Endpoints:
 
