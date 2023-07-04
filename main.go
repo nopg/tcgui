@@ -43,22 +43,19 @@ func read_current_settings() (TcParams, error) {
 	return vals, err
 }
 
-func set_interfaces(ctx huma.Context, vals TcParams) {
-	ctx.Header().Set("Content-Type", "text/plain")
-	log.Println(vals.Latency, vals.Loss, vals.Jitter, vals.Bandwidth)
+func set_tc_params(ctx huma.Context, vals TcParams) []byte {
+	log.Printf("Setting: %+v", vals)
+	args := []string{vals.Latency, vals.Loss, vals.Jitter, vals.Bandwidth}
 
-	args := fmt.Sprintf("%s %s %s %s", vals.Latency, vals.Loss, vals.Jitter, vals.Bandwidth)
-	out, err := exec.Command("./static/tccommands.sh", args).Output()
+	// Run script (for now)
+	output, err := exec.Command("./static/exectc.sh", args...).Output()
 	if err != nil {
 		log.Println(err)
 	}
-	resp := fmt.Sprintf("%s", out)
 	save_current_settings(vals)
-
-	ctx.Write([]byte(resp))
+	return output
 }
 
-// Main Page
 func main_page(ctx huma.Context) {
 	body, err := ioutil.ReadFile("./static/index.html")
 
@@ -69,7 +66,7 @@ func main_page(ctx huma.Context) {
 	ctx.Write(body)
 }
 
-func read(ctx huma.Context) {
+func read_page(ctx huma.Context) {
 	ctx.Header().Set("Content-Type", "text/html")
 	vals, err := read_current_settings()
 	if err != nil {
@@ -79,14 +76,14 @@ func read(ctx huma.Context) {
 	ctx.Write([]byte(body))
 }
 
-func set(ctx huma.Context, data FormData) {
-	ctx.Header().Set("Content-Type", "text/plain")
-	//body := fmt.Sprintf("latency: %d\njitter: %d\nbandwidth: %d\nloss: %d", data.Body.Latency, data.Body.Jitter, data.Body.Bandwidth, data.Body.Loss)
+func set_page(ctx huma.Context, data FormData) {
+	ctx.Header().Set("Content-Type", "text/html")
+
+	// Pull Form Values out into something better
 	rawbody := data.Body
 	rawparams := new(strings.Builder)
 	_, _ = io.Copy(rawparams, rawbody)
-	log.Println(rawparams.String())
-
+	// log.Println(rawparams.String())
 	myurl := fmt.Sprintf("https://x.com/?%s", rawparams.String())
 	params, err := url.Parse(myurl)
 	if err != nil {
@@ -99,51 +96,45 @@ func set(ctx huma.Context, data FormData) {
 	vals.Jitter = values["jitter"][0]
 	vals.Bandwidth = values["bandwidth"][0]
 
-	log.Printf("Setting: %+v", vals)
-	set_interfaces(ctx, vals)
+	// Set TC Params
+	out := set_tc_params(ctx, vals)
+	ctx.Write(out)
+
 }
 
 func load_defaults() {
 	_, err := read_current_settings()
 	if err != nil {
-		default_vals := TcParams{"0", "0", "0", "0"}
+		default_vals := TcParams{"0", "0", "0", "1000000"}
 		save_current_settings(default_vals)
 	}
 }
 
 func main() {
-	// Create current_settings.json
+	// Create current_settings.json if needed
 	load_defaults()
-	// Create new router & CLI with defaults
-	app := cli.NewRouter("Minimal Example", "1.0.0")
 
-	// Endpointsn
+	// Create new Huma router & CLI with defaults
+	app := cli.NewRouter("RPi WAN Emulation", "1.0.0")
+
+	// Endpoints:
+
+	// Main
 	app.Resource("/").Get("get-root", "Main Page",
 		// The only response is HTTP 200
-		responses.OK().ContentType("text/plain"),
+		responses.OK().ContentType("text/html"),
 	).Run(main_page)
 
-	app.Resource("/read").Get("read-values", "Get the existing latency/loss/jitter/bandwidth values",
-		responses.OK().ContentType("text/plain"),
-	).Run(read)
+	// Read
+	app.Resource("/read").Get("read-values", "Get the existing TC values",
+		responses.OK().ContentType("text/html"),
+	).Run(read_page)
 
-	app.Resource("/set").Post("set-values", "Set the latency/loss/jitte/bandwidth",
-		responses.NoContent(),
-	).Run(set)
-
-	// app.Resource("/test").Get("sup test", "Get a short text message",
-	// 	// The only response is HTTP 200
-	// 	responses.OK().ContentType("text/plain"),
-	// ).Run(test)
+	// Set
+	app.Resource("/set").Post("set-values", "Set the TC values",
+		responses.OK().ContentType("text/html"),
+	).Run(set_page)
 
 	// Start Server
 	app.Run()
 }
-
-// out, err := exec.Command("date").Output()
-// if err != nil {
-// 	log.Fatal(err)
-// }
-// resp := fmt.Sprintf("Hello, world!\nThe date is: %s", out)
-
-// ctx.Write([]byte(resp))
