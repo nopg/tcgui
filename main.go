@@ -53,8 +53,8 @@ func set_interfaces(ctx huma.Context, vals TcParams) {
 		log.Println(err)
 	}
 	resp := fmt.Sprintf("%s", out)
-
 	save_current_settings(vals)
+
 	ctx.Write([]byte(resp))
 }
 
@@ -84,7 +84,7 @@ func set(ctx huma.Context, data FormData) {
 	//body := fmt.Sprintf("latency: %d\njitter: %d\nbandwidth: %d\nloss: %d", data.Body.Latency, data.Body.Jitter, data.Body.Bandwidth, data.Body.Loss)
 	rawbody := data.Body
 	rawparams := new(strings.Builder)
-	n, _ := io.Copy(rawparams, rawbody)
+	_, _ = io.Copy(rawparams, rawbody)
 	log.Println(rawparams.String())
 
 	myurl := fmt.Sprintf("https://x.com/?%s", rawparams.String())
@@ -93,15 +93,13 @@ func set(ctx huma.Context, data FormData) {
 		log.Fatal(err)
 	}
 	values := params.Query()
-	log.Println(values)
-	log.Println(n)
-
 	var vals TcParams
 	vals.Latency = values["latency"][0]
 	vals.Loss = values["loss"][0]
 	vals.Jitter = values["jitter"][0]
 	vals.Bandwidth = values["bandwidth"][0]
 
+	log.Printf("Setting: %+v", vals)
 	set_interfaces(ctx, vals)
 }
 
