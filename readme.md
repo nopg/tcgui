@@ -1,9 +1,12 @@
-# TCGUI
-Put a device (typically a Raspberry Pi) inline of your WAN connections, artifically increase/decrease
-Latency, Loss, Jitter, or Bandwidth using a web form.
+# TCGUI (Linux Traffic Control Front-End)
+Put a device (typically a Raspberry Pi) inline of your WAN connections, to be used to artifically increase/decrease
+Latency, Loss, Jitter, or Bandwidth using a web form. 
 
-Supported OS's:
-- Linux
+Original idea taken from: http://www.uebi.net/howtos/rpiwanem.htm but this now ports it to an easy executable to be run
+from any device without a need for any manual configurations.
+  
+###  Supported Operating Sytems:
+- Linux  
 
 As tcgui utilizes the linux command '[tc](https://man7.org/linux/man-pages/man8/tc.8.html)', only Linux is supported
 
@@ -14,7 +17,7 @@ bash -c "$(curl -sL https://raw.githubusercontent.com/glspi/tcgui/main/get.sh)"
 ```
 
 ## Usage
-- Just run `./tcgui` and the pc will now be running a webserver, defaults to port 8888 but can be changed:
+- Just run `./tcgui` and the pc/rpi will now be running a webserver, defaults to port 8888 but can be changed:
 - Run `./tcgui -p 80` to use port 80 (likely requires sudo)
 
 ### Screenshot/Example:
@@ -22,10 +25,11 @@ bash -c "$(curl -sL https://raw.githubusercontent.com/glspi/tcgui/main/get.sh)"
 
 ## Topology
 You should have a device with 3 separate NIC's. Choose one for your 'out of band' management. The remaining 2 ports 
-will be used to 'bridge' the connection between your WAN and Router:
-                            eth0 (mgmt)
-                              |
-        WAN   <-->  eth1 :YOUR DEVICE: eth2  <-->   Router
+will be used to 'bridge' the connection between your WAN and Router:  
+
+                            eth0 (mgmt)  
+                              |  
+          WAN   <-->  eth1 :YOUR DEVICE: eth2  <-->   Router
 
 Example /etc/network/interfaces config:
 ```
