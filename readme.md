@@ -17,12 +17,15 @@ bash -c "$(curl -sL https://raw.githubusercontent.com/glspi/tcgui/main/get.sh)"
 - Just run `./tcgui` and the pc will now be running a webserver, defaults to port 8888 but can be changed:
 - Run `./tcgui -p 80` to use port 80 (likely requires sudo)
 
+### Screenshot/Example:
+![tc gui main page](./static/tcgui.png)
 
 ## Topology
 You should have a device with 3 separate NIC's. Choose one for your 'out of band' management. The remaining 2 ports 
 will be used to 'bridge' the connection between your WAN and Router:
-
-        WAN   <-->  nic2:YOUR DEVICE:nic3  <-->   Router
+                            eth0 (mgmt)
+                              |
+        WAN   <-->  eth1 :YOUR DEVICE: eth2  <-->   Router
 
 Example /etc/network/interfaces config:
 ```
