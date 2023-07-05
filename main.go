@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,7 +17,13 @@ import (
 	"github.com/danielgtaylor/huma/responses"
 )
 
-var Version string = "0.0.1"
+var (
+	Version string = "0.0.1"
+	//go:embed static/index.html
+	indexhtml string
+	//go:embed static/exectc.sh
+	exectc string
+)
 
 type FormData struct {
 	Body io.Reader
@@ -49,10 +56,12 @@ func read_current_settings() (TcParams, error) {
 
 func set_tc_params(ctx huma.Context, vals TcParams) []byte {
 	log.Printf("Setting: %+v", vals)
-	args := []string{vals.Latency, vals.Loss, vals.Jitter, vals.Bandwidth, vals.Eth1, vals.Eth2}
+	args := []string{"-s", "--", vals.Latency, vals.Loss, vals.Jitter, vals.Bandwidth, vals.Eth1, vals.Eth2}
 
-	// Run TC script (for now)
-	output, err := exec.Command("./static/exectc.sh", args...).Output()
+	// Run TC script (for now) Use 'bash -s --' to read from embedded script
+	c := exec.Command("bash", args...)
+	c.Stdin = strings.NewReader(exectc)
+	output, err := c.Output()
 	if err != nil {
 		log.Println(err)
 	}
@@ -61,13 +70,9 @@ func set_tc_params(ctx huma.Context, vals TcParams) []byte {
 }
 
 func main_page(ctx huma.Context) {
-	body, err := ioutil.ReadFile("./static/index.html")
-	if err != nil {
-		log.Fatalf("unable to read file: %v", err)
-	}
-
+	body := indexhtml
 	ctx.Header().Set("Content-Type", "text/html")
-	ctx.Write(body)
+	ctx.Write([]byte(body))
 }
 
 func read_page(ctx huma.Context) {
