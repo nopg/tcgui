@@ -8,11 +8,17 @@ switched instead of routed and added the packet loss parameter. -->
 
 <body>
 <br>
-<font face="arial" size="5"><b>Parameters for RPi WAN emulation</b></font>
+<font face="arial" size="5"><b>Parameters for RPi WAN Emulation</b></font>
 <br><br>
 <font face="arial">To clear the settings, just submit with the below defaults.
 <br><br><br>
 <form name="setting" action="set" method="post">
+<b>Bridged Port Names:</b> <br>
+Bridge Port 1: <input type="text" name="eth1" value="eth1">
+Bridge Port 2: <input type="text" name="eth2" value="eth2">
+<p>
+    <b>Values:</b>
+</p>
 Latency (ms): <input type="text" name="latency" value="0"><br>
 Jitter (ms): <input type="text" name="jitter" value="0"><br>
 Bandwidth (kbit/s): <input type="text" name="bandwidth" value="1000000"><br>
@@ -22,9 +28,8 @@ Packet Loss (%): <input type="text" name="loss" value="0"><br>
 <input type="submit" value="Configure">
 <input type="reset" value="Defaults">
 </form>
-<p>
+<br><br>
 <a href="read" class="btn">Show Existing Settings</a>
-</p>
 
 </body>
 </html>

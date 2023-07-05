@@ -27,6 +27,8 @@ type TcParams struct {
 	Loss      string
 	Jitter    string
 	Bandwidth string
+	Eth1      string
+	Eth2      string
 }
 
 func save_current_settings(vals TcParams) {
@@ -47,9 +49,9 @@ func read_current_settings() (TcParams, error) {
 
 func set_tc_params(ctx huma.Context, vals TcParams) []byte {
 	log.Printf("Setting: %+v", vals)
-	args := []string{vals.Latency, vals.Loss, vals.Jitter, vals.Bandwidth}
+	args := []string{vals.Latency, vals.Loss, vals.Jitter, vals.Bandwidth, vals.Eth1, vals.Eth2}
 
-	// Run script (for now)
+	// Run TC script (for now)
 	output, err := exec.Command("./static/exectc.sh", args...).Output()
 	if err != nil {
 		log.Println(err)
@@ -60,32 +62,30 @@ func set_tc_params(ctx huma.Context, vals TcParams) []byte {
 
 func main_page(ctx huma.Context) {
 	body, err := ioutil.ReadFile("./static/index.html")
-
 	if err != nil {
 		log.Fatalf("unable to read file: %v", err)
 	}
+
 	ctx.Header().Set("Content-Type", "text/html")
 	ctx.Write(body)
 }
 
 func read_page(ctx huma.Context) {
-	ctx.Header().Set("Content-Type", "text/html")
 	vals, err := read_current_settings()
 	if err != nil {
 		log.Fatalf("Error reading current settings: %v", err)
 	}
-	body := fmt.Sprintf("Latency (ms): &emsp; &emsp; %s<br>Jitter (ms): &emsp; &emsp; &emsp; %s<br>Bandwidth (kbit/s): %s<br>Packet Loss (%%): &emsp; %s<br>", vals.Latency, vals.Jitter, vals.Bandwidth, vals.Loss)
+	body := fmt.Sprintf("Bridge Port 1: &emsp; &emsp; %s<br>Bridge Port 2: &emsp; &emsp; %s<br><br>Latency (ms): &emsp; &emsp; %s<br>Jitter (ms): &emsp; &emsp; &emsp; %s<br>Bandwidth (kbit/s): %s<br>Packet Loss (%%): &emsp; %s<br>", vals.Eth1, vals.Eth2, vals.Latency, vals.Jitter, vals.Bandwidth, vals.Loss)
+
+	ctx.Header().Set("Content-Type", "text/html")
 	ctx.Write([]byte(body))
 }
 
 func set_page(ctx huma.Context, data FormData) {
-	ctx.Header().Set("Content-Type", "text/html")
-
-	// Pull Form Values out into something better
+	// Pull Form Values out into TcParams struct
 	rawbody := data.Body
 	rawparams := new(strings.Builder)
 	_, _ = io.Copy(rawparams, rawbody)
-	// log.Println(rawparams.String())
 	myurl := fmt.Sprintf("https://x.com/?%s", rawparams.String())
 	params, err := url.Parse(myurl)
 	if err != nil {
@@ -97,17 +97,20 @@ func set_page(ctx huma.Context, data FormData) {
 	vals.Loss = values["loss"][0]
 	vals.Jitter = values["jitter"][0]
 	vals.Bandwidth = values["bandwidth"][0]
+	vals.Eth1 = values["eth1"][0]
+	vals.Eth2 = values["eth2"][0]
 
 	// Set TC Params
-	out := set_tc_params(ctx, vals)
-	ctx.Write(out)
+	body := set_tc_params(ctx, vals)
+	ctx.Header().Set("Content-Type", "text/html")
+	ctx.Write(body)
 
 }
 
 func load_defaults() {
 	_, err := read_current_settings()
 	if err != nil {
-		default_vals := TcParams{"0", "0", "0", "1000000"}
+		default_vals := TcParams{"0", "0", "0", "1000000", "eth1", "eth2"}
 		save_current_settings(default_vals)
 	}
 }
@@ -120,23 +123,17 @@ func main() {
 	app := cli.NewRouter("RPi WAN Emulation", Version)
 
 	// Endpoints:
-
-	// Main
 	app.Resource("/").Get("get-root", "Main Page",
-		// The only response is HTTP 200
 		responses.OK().ContentType("text/html"),
 	).Run(main_page)
 
-	// Read
 	app.Resource("/read").Get("read-values", "Get the existing TC values",
 		responses.OK().ContentType("text/html"),
 	).Run(read_page)
 
-	// Set
 	app.Resource("/set").Post("set-values", "Set the TC values",
 		responses.OK().ContentType("text/html"),
 	).Run(set_page)
 
-	// Start Server
 	app.Run()
 }
