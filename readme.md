@@ -13,7 +13,7 @@ As tcgui utilizes the linux command '[tc](https://man7.org/linux/man-pages/man8/
 ## Install
 For any linux based system just run the command below to install the latest version:
 ```bash
-bash -c "$(curl -sL https://raw.githubusercontent.com/glspi/tcgui/main/get.sh)"
+bash -c "$(curl -sL https://raw.githubusercontent.com/nopg/tcgui/main/get.sh)"
 ```
 
 ## Usage
