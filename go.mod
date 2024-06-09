@@ -1,4 +1,4 @@
-module github.com/glspi/tcgui
+module github.com/nopg/tcgui
 
 go 1.20
 
